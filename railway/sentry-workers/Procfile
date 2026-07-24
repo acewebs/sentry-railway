@@ -1,0 +1,4 @@
+ingest-events: /etc/sentry/entrypoint.sh run consumer ingest-events --consumer-group ingest-consumer --max-poll-interval-ms 300000
+postprocess-errors: /etc/sentry/entrypoint.sh run consumer --no-strict-offset-reset post-process-forwarder-errors --consumer-group post-process-forwarder --synchronize-commit-log-topic=snuba-commit-log --synchronize-commit-group=snuba-consumers --max-poll-interval-ms 300000
+taskworker: /etc/sentry/entrypoint.sh run taskworker --concurrency=2 --rpc-host=taskbroker.railway.internal:50051 --max-child-task-count=10000
+taskscheduler: /etc/sentry/entrypoint.sh run taskworker-scheduler
