@@ -126,7 +126,7 @@ per-deployment usage — and the kickback — is meaningful.
 
 ## How to publish (maintainers)
 
-Build a working project from `andrei-aceweb/sentry-railway` @ `railway-template`
+Build a working project from `acewebs/sentry-railway` @ `railway-template`
 (each build service → its `RAILWAY_DOCKERFILE_PATH`; image services → pinned
 images; volumes attached), run the bootstrap, then Railway dashboard → **publish as
 a template**. Mark the required variables; set name/description/icon above. Group
