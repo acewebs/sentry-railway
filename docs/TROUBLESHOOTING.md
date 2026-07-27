@@ -82,7 +82,7 @@ relay; for web/workers the same missing DB is only a warning).
 trusts the login form's `Origin` if it matches `system.url-prefix`; when that option
 is unset the browser sign-in is rejected (API ingestion doesn't hit this, so it can
 go unnoticed). → Set **`SENTRY_URL_PREFIX`** (web) to the public https URL
-(`https://${{nginx.RAILWAY_PUBLIC_DOMAIN}}`); `sentry.conf.py` applies it as
+(`https://${{gateway.RAILWAY_PUBLIC_DOMAIN}}`); `sentry.conf.py` applies it as
 `system.url-prefix` and adds it to `CSRF_TRUSTED_ORIGINS`. To fix a running instance
 without a rebuild: `sentry config set system.url-prefix https://<domain>` then restart
 web (CSRF origins are recomputed at startup).

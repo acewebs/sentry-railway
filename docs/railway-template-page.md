@@ -31,10 +31,10 @@ session replay, uptime/cron monitors, feedback, or native symbolication (a
 separate "Full / APM" template covers those). See
 [ARCHITECTURE.md](ARCHITECTURE.md#errors-only-vs-full).
 
-**~13 services**, all private except the public `nginx`: postgres, redis,
-memcached, kafka, clickhouse, snuba-api, snuba-errors, web, sentry-workers
+**~13 services**, all private except the public `gateway`: postgres, redis,
+memcached, kafka, clickhouse, snuba-api, snuba-errors, sentry-web, sentry-workers
 (honcho-grouped: ingest + post-process + taskworker + scheduler), taskbroker,
-relay, nginx. Full roles: [ARCHITECTURE.md](ARCHITECTURE.md).
+relay, gateway (nginx). Full roles: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Before you deploy
 
@@ -56,11 +56,11 @@ All per-deploy secrets are **Railway variables**; you never edit repo files. See
    variable: `${{ secret(50) }}`.
 2. **`SENTRY_URL_PREFIX`** (web) — the public https URL, needed for links and (since
    Django 4) for browser login to pass CSRF. Point it at nginx's domain:
-   `https://${{nginx.RAILWAY_PUBLIC_DOMAIN}}`.
+   `https://${{gateway.RAILWAY_PUBLIC_DOMAIN}}`.
 3. **Relay credentials** — generate one keypair
    (`docker run --rm ghcr.io/getsentry/relay:nightly credentials generate --stdout`),
    then set the whole JSON as **`RELAY_CREDENTIALS_JSON`** (relay) and its
-   `public_key` as **`SENTRY_RELAY_WHITELIST_PK`** (web) so web trusts the relay.
+   `public_key` as **`SENTRY_RELAY_WHITELIST_PK`** (sentry-web) so it trusts the relay.
    Why: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (relay 403 note).
 4. **Admin user (optional)** — set `SENTRY_ADMIN_EMAIL` + `SENTRY_ADMIN_PASSWORD`
    and the bootstrap creates the superuser for you; leave them unset to create the
@@ -71,7 +71,7 @@ All per-deploy secrets are **Railway variables**; you never edit repo files. See
 Sentry needs a one-time schema/topic bootstrap that Railway does not do on its own.
 This template runs it **automatically** as **pre-deploy commands** — no shell steps:
 
-- The **`web`** service runs [`railway/sentry/bootstrap.sh`](../railway/sentry/bootstrap.sh)
+- The **`sentry-web`** service runs [`railway/sentry/bootstrap.sh`](../railway/sentry/bootstrap.sh)
   before it starts: waits for the data plane, then `sentry upgrade --create-kafka-topics`
   (Postgres migrations + internal project + Sentry's Kafka topics), ensures the
   taskbroker / subscription-result topics, and (if you set `SENTRY_ADMIN_EMAIL` +
@@ -88,7 +88,7 @@ ordering. Wiring is [`railway/web.json`](../railway/web.json) and
 file points at these). All you do is:
 
 1. Deploy the template (data plane volumes are pre-attached).
-2. **Attach the public domain** to `nginx` (port 80).
+2. **Attach the public domain** to `gateway` (port 80).
 3. Open it and sign in — with the admin you set via env, or create the first admin on
    the setup screen if you left those unset.
 
@@ -98,7 +98,7 @@ fallback for debugging topic issues. Exact commands and every gotcha:
 
 ## First login + first event
 
-- Open the `nginx` domain → sign in with your admin user.
+- Open the `gateway` domain → sign in with your admin user.
 - Send a test event to `https://<your-app>.up.railway.app/api/<project-id>/store/`
   with `X-Sentry-Auth: Sentry sentry_version=7, sentry_key=<dsn-public-key>`; it
   should appear as an issue. (Verified end-to-end: event → relay → Kafka → ingest →

@@ -60,7 +60,7 @@ match those hostnames** and the internal wiring resolves with minimal changes.
 | `relay` | `ghcr.io/getsentry/relay` | — | Ingestion gateway. Needs generated credentials (see below). |
 | `symbolicator` | `ghcr.io/getsentry/symbolicator` | `/data` (cache) | Native/JS symbolication. Optional for pure backend error tracking. |
 | `vroom` | `ghcr.io/getsentry/vroom` | `/var/lib/sentry-profiles` | Profiling. Optional. |
-| `nginx` | `nginx:1.31.3-alpine` | — | **The one public service.** Routes `/api/…/store/` to Relay and everything else to `web`. Attach the Railway domain here. |
+| `gateway` | `nginx:1.31.3-alpine` | — | **The one public service** (nginx). Routes `/api/…/store/` to Relay and everything else to `sentry-web`. Attach the Railway domain here. |
 
 ### Snuba (image `ghcr.io/getsentry/snuba`, grouped)
 
@@ -73,7 +73,7 @@ match those hostnames** and the internal wiring resolves with minimal changes.
 
 | Railway service | Command | Role |
 |---|---|---|
-| `web` | `run web` | Django/UI/API (private; fronted by nginx). |
+| `sentry-web` | `run web` | Django/UI/API (private; fronted by `gateway`). |
 | `worker` | `run worker` | Celery background tasks. |
 | `cron` | `run cron` | Scheduler (beat). |
 | `consumers` | `run consumer …` grouped | ingest-consumer(s) + post-process-forwarder(s), grouped for low volume. |
@@ -142,11 +142,11 @@ Railway **shared variables** so every service sees the same value.
 3. Deploy `snuba-api`, then `relay`, `symbolicator`, `vroom`, `smtp`.
 4. Deploy the **Sentry group** (`web`, `worker`, `cron`, `consumers`, `taskbroker`,
    `taskworker`) and the **Snuba consumers** group.
-5. Deploy `nginx`, attach the public domain.
+5. Deploy `gateway` (nginx), attach the public domain.
 
 The **install/migration** step (Postgres migrations + Snuba bootstrap + Kafka
 topics + internal project + optional admin) runs **automatically as pre-deploy
-commands** on the `web` and `snuba-api` services — see
+commands** on the `sentry-web` and `snuba-api` services — see
 [Bootstrap](#bootstrap-pre-deploy) below. A brand-new all-at-once deploy converges
 on its own because each pre-deploy waits for its data-plane dependencies first.
 
@@ -156,7 +156,7 @@ Each of the two migration-owning services runs a one-time, idempotent bootstrap 
 a one-off container **before it starts serving** (Railway `preDeployCommand`), which
 gates the rollout:
 
-- **`web`** → `bash /etc/sentry/bootstrap.sh` ([`railway/sentry/bootstrap.sh`](../railway/sentry/bootstrap.sh)):
+- **`sentry-web`** → `bash /etc/sentry/bootstrap.sh` ([`railway/sentry/bootstrap.sh`](../railway/sentry/bootstrap.sh)):
   wait for Postgres/Kafka/Redis, `sentry upgrade --create-kafka-topics`, ensure the
   taskbroker/subscription-result topics ([`railway/sentry/ensure-topics.py`](../railway/sentry/ensure-topics.py)),
   optional `createuser` from `SENTRY_ADMIN_EMAIL`/`SENTRY_ADMIN_PASSWORD`.

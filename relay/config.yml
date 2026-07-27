@@ -1,5 +1,5 @@
 relay:
-  upstream: "http://web.railway.internal:9000/"
+  upstream: "http://sentry-web.railway.internal:9000/"
   host: "::"
   port: 3000
 logging:

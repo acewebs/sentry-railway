@@ -25,21 +25,26 @@ config-as-code file — point the service's "Railway config file" at it.
 | snuba-errors | image `ghcr.io/getsentry/snuba` | `snuba-errors.json` | stock image + start command (no Dockerfile) |
 | clickhouse | `clickhouse/Dockerfile` | `clickhouse.json` | bakes Snuba's ClickHouse XML config |
 | kafka | `kafka/Dockerfile` | `kafka.json` | `USER root` (Railway volume perms) |
-| nginx | `nginx/Dockerfile` | `nginx.json` | bakes routing `nginx.conf`; the one public service |
+| gateway | `nginx/Dockerfile` | `gateway.json` | nginx-based public reverse proxy; the one public service |
 | relay | `relay/Dockerfile` | `relay.json` | bakes config + busybox entrypoint (creds from env) |
-| web | `sentry/Dockerfile` | `web.json` | `/etc/sentry` + bootstrap; `preDeployCommand` |
+| sentry-web | `sentry/Dockerfile` | `sentry-web.json` | Sentry's Django app (`/etc/sentry` + bootstrap; `preDeployCommand`) |
 | sentry-workers | `sentry-workers/Dockerfile` | `sentry-workers.json` | honcho-grouped consumers |
 | snuba-api | `snuba-api/Dockerfile` | `snuba-api.json` | thin wrapper for the pre-deploy script; `preDeployCommand` |
 | taskbroker | `taskbroker/Dockerfile` | `taskbroker.json` | bakes `taskbroker/config.yml` |
 
-Only `web` and `snuba-api` set a `preDeployCommand` (the bootstrap); the rest are
-build + start config. `snuba-errors` shows the pattern for command-only services:
+Only `sentry-web` and `snuba-api` set a `preDeployCommand` (the bootstrap); the rest
+are build + start config. `snuba-errors` shows the pattern for command-only services:
 the stock image plus a start command, no Dockerfile.
+
+Service names double as private DNS (`<name>.railway.internal`): `gateway` is the
+public nginx proxy, `sentry-web` is the Django app (referenced by `gateway`/`relay`/
+`sentry/config.yml`), and the infra/relay/taskbroker/snuba names are addressed by
+peers too — rename with care.
 
 ## Contents
 
 - `sentry/Dockerfile` — wraps `ghcr.io/getsentry/sentry`, bakes `/etc/sentry`
-  config in. Shared by `web` and `sentry-workers` (same image, different start
+  config in. Shared by `sentry-web` and `sentry-workers` (same image, different start
   command). Also bakes the pre-deploy bootstrap (`sentry/bootstrap.sh`,
   `sentry/ensure-topics.py`, `lib/wait-for-tcp.py`).
 - `snuba-api/Dockerfile` — thin wrapper over `ghcr.io/getsentry/snuba` that bakes the

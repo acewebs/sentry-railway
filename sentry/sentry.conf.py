@@ -63,11 +63,11 @@ SENTRY_RELAY_OPEN_REGISTRATION = True
 _relay_pk = env("SENTRY_RELAY_WHITELIST_PK", "").strip()
 SENTRY_RELAY_WHITELIST_PK = [_relay_pk] if _relay_pk else []
 
-# Public URL of this instance (the Railway domain attached to nginx). Sentry uses
-# it to build absolute links and, since Django 4, to trust the login form's Origin
-# for CSRF — without it, browser login fails with "CSRF Validation Failed". On
-# Railway point it at nginx's public domain via a variable reference:
-#   SENTRY_URL_PREFIX=https://${{nginx.RAILWAY_PUBLIC_DOMAIN}}
+# Public URL of this instance (the Railway domain attached to the gateway service).
+# Sentry uses it to build absolute links and, since Django 4, to trust the login
+# form's Origin for CSRF — without it, browser login fails with "CSRF Validation
+# Failed". On Railway point it at the gateway's public domain via a variable reference:
+#   SENTRY_URL_PREFIX=https://${{gateway.RAILWAY_PUBLIC_DOMAIN}}
 _url_prefix = env("SENTRY_URL_PREFIX", "").strip()
 if _url_prefix:
     SENTRY_OPTIONS["system.url-prefix"] = _url_prefix

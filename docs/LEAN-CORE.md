@@ -35,9 +35,9 @@ Result: ~11 Railway services instead of 40+.
 
 | Service | Image / build | Public? | Start cmd |
 |---|---|---|---|
-| `nginx` | build `railway/nginx/Dockerfile` | **public** | default (routes ingest→relay, rest→web) |
+| `gateway` | build `railway/nginx/Dockerfile` | **public** | nginx-based; routes ingest→relay, rest→sentry-web |
 | `relay` | build `railway/relay/Dockerfile` | private | default |
-| `web` | build `railway/sentry/Dockerfile` | private | `run web` |
+| `sentry-web` | build `railway/sentry/Dockerfile` | private | `run web` |
 | `snuba-api` | `ghcr.io/getsentry/snuba:nightly` | private | default (API on :1218) |
 | `taskbroker` | `ghcr.io/getsentry/taskbroker:nightly` | private | `/opt/taskbroker -c /etc/taskbroker/config.yml` |
 
@@ -86,7 +86,7 @@ counters/distributions consumers, profiling consumers.
 
 Name the services (or aliases) so these hostnames resolve on Railway's private
 network: `postgres`/`pgbouncer`, `redis`, `clickhouse`, `kafka`, `memcached`,
-`relay`, `web`, `snuba-api`, `taskbroker`. Where a name can't match, override the
+`relay`, `sentry-web`, `snuba-api`, `taskbroker`. Where a name can't match, override the
 matching env (`CLICKHOUSE_HOST`, `SNUBA`, `DEFAULT_BROKERS`, `REDIS_HOST`, the
 taskbroker `--rpc-host`) to the `*.railway.internal` name.
 
