@@ -57,7 +57,7 @@ match those hostnames** and the internal wiring resolves with minimal changes.
 
 | Railway service | Image | Volume | Notes |
 |---|---|---|---|
-| `relay` | `ghcr.io/getsentry/relay` | — | Ingestion gateway. Needs generated credentials (see below). |
+| `sentry-relay` | `ghcr.io/getsentry/relay` | — | Ingestion gateway. Needs generated credentials (see below). |
 | `symbolicator` | `ghcr.io/getsentry/symbolicator` | `/data` (cache) | Native/JS symbolication. Optional for pure backend error tracking. |
 | `vroom` | `ghcr.io/getsentry/vroom` | `/var/lib/sentry-profiles` | Profiling. Optional. |
 | `gateway` | `nginx:1.31.3-alpine` | — | **The one public service** (nginx). Routes `/api/…/store/` to Relay and everything else to `sentry-web`. Attach the Railway domain here. |
@@ -77,7 +77,7 @@ match those hostnames** and the internal wiring resolves with minimal changes.
 | `worker` | `run worker` | Celery background tasks. |
 | `cron` | `run cron` | Scheduler (beat). |
 | `consumers` | `run consumer …` grouped | ingest-consumer(s) + post-process-forwarder(s), grouped for low volume. |
-| `taskbroker` + `taskworker` | `taskbroker` image + `run taskworker` | New task system; keep if your nightly requires it (this build does). |
+| `sentry-taskbroker` + `taskworker` | `taskbroker` image + `run taskworker` | New task system; keep if your nightly requires it (this build does). |
 
 **Optional / drop for a lean install:** `launchpad-taskworker`, `uptime-checker`,
 `uptime-results`, `ingest-feedback-events`, `ingest-replay-recordings`,

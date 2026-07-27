@@ -26,20 +26,21 @@ config-as-code file — point the service's "Railway config file" at it.
 | clickhouse | `clickhouse/Dockerfile` | `clickhouse.json` | bakes Snuba's ClickHouse XML config |
 | kafka | `kafka/Dockerfile` | `kafka.json` | `USER root` (Railway volume perms) |
 | gateway | `nginx/Dockerfile` | `gateway.json` | nginx-based public reverse proxy; the one public service |
-| relay | `relay/Dockerfile` | `relay.json` | bakes config + busybox entrypoint (creds from env) |
+| sentry-relay | `relay/Dockerfile` | `sentry-relay.json` | Sentry ingestion gateway; bakes config + busybox entrypoint (creds from env) |
 | sentry-web | `sentry/Dockerfile` | `sentry-web.json` | Sentry's Django app (`/etc/sentry` + bootstrap; `preDeployCommand`) |
 | sentry-workers | `sentry-workers/Dockerfile` | `sentry-workers.json` | honcho-grouped consumers |
 | snuba-api | `snuba-api/Dockerfile` | `snuba-api.json` | thin wrapper for the pre-deploy script; `preDeployCommand` |
-| taskbroker | `taskbroker/Dockerfile` | `taskbroker.json` | bakes `taskbroker/config.yml` |
+| sentry-taskbroker | `taskbroker/Dockerfile` | `sentry-taskbroker.json` | Sentry task-queue broker; bakes `taskbroker/config.yml` |
 
 Only `sentry-web` and `snuba-api` set a `preDeployCommand` (the bootstrap); the rest
 are build + start config. `snuba-errors` shows the pattern for command-only services:
 the stock image plus a start command, no Dockerfile.
 
 Service names double as private DNS (`<name>.railway.internal`): `gateway` is the
-public nginx proxy, `sentry-web` is the Django app (referenced by `gateway`/`relay`/
-`sentry/config.yml`), and the infra/relay/taskbroker/snuba names are addressed by
-peers too — rename with care.
+public nginx proxy; `sentry-web` is the Django app (referenced by `gateway`,
+`sentry-relay`, `sentry/config.yml`); `sentry-relay` is referenced by `gateway`;
+`sentry-taskbroker` by `sentry-workers`; and the infra/snuba names are addressed by
+peers too — rename with care (update the matching `*.railway.internal` refs).
 
 ## Contents
 
