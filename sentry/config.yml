@@ -70,10 +70,11 @@ system.internal-url-prefix: 'http://web.railway.internal:9000'
 #
 # If you are using SENTRY_SYSTEM_SECRET_KEY that is being set on your `.env` or `.env.custom` file,
 # you should remove this line below as it won't be used anyway.
-# SECRET — generate per deployment: `docker compose run --rm web config generate-secret-key`
-# (or `sentry config generate-secret-key`). Do NOT commit a real value. The live
-# Railway deployment has its own baked key; this placeholder keeps the repo clean.
-system.secret-key: 'CHANGE_ME_generate_a_50_char_secret_key'
+# SECRET — set via the SENTRY_SYSTEM_SECRET_KEY environment variable (read in
+# sentry/sentry.conf.py), NOT here. On Railway make it a generated variable, e.g.
+# SENTRY_SYSTEM_SECRET_KEY=${{ secret(50) }}. Left unset here on purpose so the
+# env value is the single source of truth (a value here would only cause confusion).
+# system.secret-key: '<generate with `sentry config generate-secret-key`>'
 
 # The ``redis.clusters`` setting is used, unsurprisingly, to configure Redis
 # clusters. These clusters can be then referred to by name when configuring

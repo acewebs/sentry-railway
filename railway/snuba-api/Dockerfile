@@ -1,0 +1,16 @@
+# Railway build wrapper: snuba-api (the Snuba HTTP query API on :1218).
+#
+# Same Snuba image the compose stack uses; this wrapper exists only to bake the
+# pre-deploy bootstrap script (Railway has no host bind mounts) so the snuba-api
+# service can run `snuba bootstrap --force` as its preDeployCommand — ClickHouse
+# migrations + Snuba's Kafka topics — before it starts serving. See
+# railway/snuba-api/bootstrap.sh and railway/snuba-api.json.
+#
+# ENTRYPOINT/CMD are inherited from the base image (./docker_entrypoint.sh + `api`),
+# so the normal start command stays `api`. Build context = repo root.
+
+ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:nightly
+FROM ${SNUBA_IMAGE}
+
+COPY railway/lib/wait-for-tcp.py /wait-for-tcp.py
+COPY railway/snuba-api/bootstrap.sh /bootstrap.sh

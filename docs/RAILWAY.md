@@ -122,8 +122,9 @@ service variables (shared where needed):
   Django secret. Generate: `docker compose run --rm web config generate-secret-key`.
 - **Relay credentials** — upstream's `install/ensure-relay-credentials.sh` produces
   `relay/credentials.json`. Generate once, then bake/provide to the `relay` service.
-- Admin user — after first boot: `railway run` the equivalent of
-  `docker compose run --rm web createuser --superuser`.
+- Admin user — set `SENTRY_ADMIN_EMAIL` + `SENTRY_ADMIN_PASSWORD` and the `web`
+  pre-deploy bootstrap creates the superuser (idempotent, `--force-update`); or
+  leave them unset and create the first admin on the web setup screen.
 
 ## Environment
 
@@ -138,13 +139,36 @@ Railway **shared variables** so every service sees the same value.
    (+ `redis`, `seaweedfs`, `symbolicator`, `vroom` if used).
 2. Deploy the **data plane** first (postgres, pgbouncer, redis, clickhouse, kafka,
    memcached) and let healthchecks go green.
-3. Run the **install/migration** step once (Postgres migrations + Snuba bootstrap +
-   internal project). This mirrors `install.sh`; run it as a one-off Railway
-   command against the running data plane.
-4. Deploy `snuba-api`, then `relay`, `symbolicator`, `vroom`, `smtp`.
-5. Deploy the **Sentry group** (`web`, `worker`, `cron`, `consumers`, `taskbroker`,
+3. Deploy `snuba-api`, then `relay`, `symbolicator`, `vroom`, `smtp`.
+4. Deploy the **Sentry group** (`web`, `worker`, `cron`, `consumers`, `taskbroker`,
    `taskworker`) and the **Snuba consumers** group.
-6. Deploy `nginx`, attach the public domain, create the admin user.
+5. Deploy `nginx`, attach the public domain.
+
+The **install/migration** step (Postgres migrations + Snuba bootstrap + Kafka
+topics + internal project + optional admin) runs **automatically as pre-deploy
+commands** on the `web` and `snuba-api` services — see
+[Bootstrap](#bootstrap-pre-deploy) below. A brand-new all-at-once deploy converges
+on its own because each pre-deploy waits for its data-plane dependencies first.
+
+## Bootstrap (pre-deploy)
+
+Each of the two migration-owning services runs a one-time, idempotent bootstrap in
+a one-off container **before it starts serving** (Railway `preDeployCommand`), which
+gates the rollout:
+
+- **`web`** → `bash /etc/sentry/bootstrap.sh` ([`railway/sentry/bootstrap.sh`](../railway/sentry/bootstrap.sh)):
+  wait for Postgres/Kafka/Redis, `sentry upgrade --create-kafka-topics`, ensure the
+  taskbroker/subscription-result topics ([`railway/sentry/ensure-topics.py`](../railway/sentry/ensure-topics.py)),
+  optional `createuser` from `SENTRY_ADMIN_EMAIL`/`SENTRY_ADMIN_PASSWORD`.
+- **`snuba-api`** → `bash /bootstrap.sh` ([`railway/snuba-api/bootstrap.sh`](../railway/snuba-api/bootstrap.sh)):
+  wait for ClickHouse/Kafka, `snuba bootstrap --force` (ClickHouse migrations +
+  Snuba's Kafka topics).
+
+Wired via each service's Railway config file: [`railway/web.json`](../railway/web.json)
+and [`railway/snuba-api.json`](../railway/snuba-api.json). This is why `snuba-api`
+builds from [`railway/snuba-api/Dockerfile`](../railway/snuba-api/Dockerfile) (a thin
+wrapper over the Snuba image) rather than the bare image — the wrapper only bakes the
+bootstrap script in, since Railway has no host bind mounts.
 
 ## Resource sizing
 

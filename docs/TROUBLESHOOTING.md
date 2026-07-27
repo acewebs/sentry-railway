@@ -62,10 +62,11 @@ all taskbroker topics (`create-topics.sh` covers them), then `railway up -s task
 **Relay logs `failed to fetch global config … 403 Forbidden`; web logs
 `Forbidden: /api/0/relays/projectconfigs/`.** The relay isn't treated as "internal."
 On Railway its source IP isn't in Sentry's internal-network set, so the IP-based
-trust path fails. → **Whitelist the relay's public key**:
-`SENTRY_RELAY_WHITELIST_PK = ["<relay public_key>"]` in `sentry.conf.py` (must match
-`relay/credentials.json`). Then **restart relay** — it backs off after repeated
-403s and only re-authenticates on a fresh start.
+trust path fails. → **Whitelist the relay's public key**: set
+`SENTRY_RELAY_WHITELIST_PK` (web) to the relay keypair's `public_key` — it must match
+the keypair the relay loads from `RELAY_CREDENTIALS_JSON`
+([relay/entrypoint.sh](../railway/relay/entrypoint.sh)). Then **restart relay** — it
+backs off after repeated 403s and only re-authenticates on a fresh start.
 
 **Relay crashloops: `could not parse yaml config file … ${RELAY_STATSD_ADDR}`.** The
 stock `relay/config.yml` has an active `metrics:` block referencing an unset env. →
@@ -74,6 +75,17 @@ Comment out the `metrics:` block (no statsd server in this build).
 **Relay crashloops: `could not load the Geoip Db … /geoip/GeoLite2-City.mmdb`.** No
 GeoIP DB is baked. → Comment out `geoip_path` in `relay/config.yml` (it's fatal for
 relay; for web/workers the same missing DB is only a warning).
+
+## Web UI / login
+
+**Login POST returns `403 CSRF Validation Failed`.** Since Django 4, Sentry only
+trusts the login form's `Origin` if it matches `system.url-prefix`; when that option
+is unset the browser sign-in is rejected (API ingestion doesn't hit this, so it can
+go unnoticed). → Set **`SENTRY_URL_PREFIX`** (web) to the public https URL
+(`https://${{nginx.RAILWAY_PUBLIC_DOMAIN}}`); `sentry.conf.py` applies it as
+`system.url-prefix` and adds it to `CSRF_TRUSTED_ORIGINS`. To fix a running instance
+without a rebuild: `sentry config set system.url-prefix https://<domain>` then restart
+web (CSRF origins are recomputed at startup).
 
 ## Ingestion (events accepted but never appear)
 
@@ -100,6 +112,11 @@ hit this on an older config, redeploy nginx.
 resolver + variable approach avoids it.
 
 ## Running one-off commands (migrations, topics, shell)
+
+> Migrations, topic creation and the optional admin user run **automatically** as
+> pre-deploy commands on the `web` and `snuba-api` services
+> ([RAILWAY.md § Bootstrap](RAILWAY.md#bootstrap-pre-deploy)). The steps below are
+> for **debugging** — re-running a piece by hand, or inspecting state.
 
 Railway's private network isn't reachable from your laptop, and `railway run` only
 injects env locally — so migrations/bootstrap must run **inside** a service.

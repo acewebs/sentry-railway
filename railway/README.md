@@ -6,9 +6,54 @@ ClickHouse and Relay *configuration* by bind-mounting repo dirs at runtime
 the config has to be **baked into each image at build time**. That is what the
 wrappers here do.
 
-> **Status:** these are starter build artifacts derived from the locally-verified
-> stack. They have **not** yet been deployed on Railway — finalize and first-deploy
-> them before publishing the template (see [../docs/RAILWAY.md](../docs/RAILWAY.md)).
+> **Status:** live-validated on the `sentry` Railway project (bootstrap, ingestion,
+> UI, env-driven secrets). Remaining before publish: connect each service's source
+> (below), then a fresh empty-volume deploy (see [../docs/RAILWAY.md](../docs/RAILWAY.md)
+> and [../dev/docs/PUBLISH-PLAN.md](../dev/docs/PUBLISH-PLAN.md) T9).
+
+## Service → source map
+
+Each service is one of two kinds. Stock services need no repo file; the config-baking
+ones build from a Dockerfile here. Every service has a `railway/<service>.json`
+config-as-code file — point the service's "Railway config file" at it.
+
+| Service | Source | Config file | Notes |
+|---|---|---|---|
+| postgres | image `postgres:14.23-bookworm` | — | env only (`PGDATA` subdir) |
+| redis | image `redis:6.2.20-alpine` | — | default |
+| memcached | image `memcached:1.6.45-alpine` | — | start arg `memcached -I 1M` |
+| snuba-errors | image `ghcr.io/getsentry/snuba` | `snuba-errors.json` | stock image + start command (no Dockerfile) |
+| clickhouse | `clickhouse/Dockerfile` | `clickhouse.json` | bakes Snuba's ClickHouse XML config |
+| kafka | `kafka/Dockerfile` | `kafka.json` | `USER root` (Railway volume perms) |
+| nginx | `nginx/Dockerfile` | `nginx.json` | bakes routing `nginx.conf`; the one public service |
+| relay | `relay/Dockerfile` | `relay.json` | bakes config + busybox entrypoint (creds from env) |
+| web | `sentry/Dockerfile` | `web.json` | `/etc/sentry` + bootstrap; `preDeployCommand` |
+| sentry-workers | `sentry-workers/Dockerfile` | `sentry-workers.json` | honcho-grouped consumers |
+| snuba-api | `snuba-api/Dockerfile` | `snuba-api.json` | thin wrapper for the pre-deploy script; `preDeployCommand` |
+| taskbroker | `taskbroker/Dockerfile` | `taskbroker.json` | bakes `taskbroker/config.yml` |
+
+Only `web` and `snuba-api` set a `preDeployCommand` (the bootstrap); the rest are
+build + start config. `snuba-errors` shows the pattern for command-only services:
+the stock image plus a start command, no Dockerfile.
+
+## Contents
+
+- `sentry/Dockerfile` — wraps `ghcr.io/getsentry/sentry`, bakes `/etc/sentry`
+  config in. Shared by `web` and `sentry-workers` (same image, different start
+  command). Also bakes the pre-deploy bootstrap (`sentry/bootstrap.sh`,
+  `sentry/ensure-topics.py`, `lib/wait-for-tcp.py`).
+- `snuba-api/Dockerfile` — thin wrapper over `ghcr.io/getsentry/snuba` that bakes the
+  `snuba-api/bootstrap.sh` pre-deploy script in (Railway has no bind mounts). Start
+  command stays `api`.
+- `relay/{Dockerfile,entrypoint.sh}` — bakes non-secret `relay/config.yml` + a static
+  busybox; the entrypoint writes `credentials.json` from `RELAY_CREDENTIALS_JSON` at
+  start (no secret baked, so a fresh clone builds).
+- `lib/wait-for-tcp.py` — shared helper: block until host:port endpoints accept a
+  connection (IPv6-aware), so a pre-deploy doesn't migrate before the data plane is up.
+- `<service>.json` — one Railway config-as-code file per service (build + start +
+  any `preDeployCommand`). See the source map above.
+- `create-topics.sh` — manual/debug fallback for Kafka topic creation (the automated
+  path is `sentry/ensure-topics.py`; keep the two topic lists in sync).
 
 ## Why upstream's own Dockerfiles aren't enough
 
@@ -23,18 +68,34 @@ config arrives via bind mount upstream and must be `COPY`d in for Railway.
 ## Contents
 
 - `sentry/Dockerfile` — wraps `ghcr.io/getsentry/sentry`, bakes `/etc/sentry`
-  config in. Used by every Sentry-image Railway service (`web`, `worker`, `cron`,
-  `consumers`, `taskworker`) — they share this image and differ only by start
-  command, set per-service in Railway. **Build-verified locally:** the image builds
-  and `/etc/sentry` contains `entrypoint.sh` (executable), `sentry.conf.py` and
-  `config.yml`, with `SENTRY_CONF=/etc/sentry`. Not yet Railway-deployed.
+  config in. Used by every Sentry-image Railway service (`web`, `sentry-consumers`,
+  `sentry-tasks`) — they share this image and differ only by start command, set
+  per-service in Railway. Also bakes the pre-deploy bootstrap (`sentry/bootstrap.sh`,
+  `sentry/ensure-topics.py`, `lib/wait-for-tcp.py`).
+- `snuba-api/Dockerfile` — thin wrapper over `ghcr.io/getsentry/snuba` that bakes the
+  `snuba-api/bootstrap.sh` pre-deploy script in (Railway has no bind mounts). Start
+  command stays `api`.
+- `lib/wait-for-tcp.py` — shared helper: block until host:port endpoints accept a
+  connection (IPv6-aware), so a pre-deploy doesn't migrate before the data plane is up.
+- `web.json` / `snuba-api.json` — Railway config files that pin each service's build,
+  start command and `preDeployCommand` (the bootstrap). Set each service's "Railway
+  config file" to point at these.
+- `create-topics.sh` — manual/debug fallback for Kafka topic creation (the automated
+  path is `sentry/ensure-topics.py`; keep the two topic lists in sync).
 
-## Still to add before publish
+## Bootstrap (one-click)
 
-- `clickhouse/Dockerfile` baking the ClickHouse config dir.
-- `relay/` — bake `../relay/config.yml` + `credentials.json` (already generated by
-  `install.sh`) into the Relay image, or supply them as Railway variables.
-- `nginx/` — the routing config that sends `/api/*/store/`, `/api/*/envelope/` to
-  `relay` and everything else to `web` (upstream renders this from a template).
-- Per-service `railway.json` files pinning each group's start command, mirroring the
-  Dub template's `railway/<service>/railway.json` pattern.
+Migrations, Kafka topics and the optional admin run automatically as pre-deploy
+commands — deployers never open a shell. Details:
+[../docs/RAILWAY.md § Bootstrap](../docs/RAILWAY.md#bootstrap-pre-deploy).
+
+## Still to do before publish
+
+- Connect each service's source in the Railway project (repo + config file for the
+  Dockerfile services; image + `railway/<svc>.json` start command for the stock ones),
+  so the graph is reproducible and "publish as template" captures it.
+- Fresh empty-volume deploy to validate the cold path + that `preDeployCommand`
+  actually runs and gates the rollout, per
+  [../dev/docs/PUBLISH-PLAN.md](../dev/docs/PUBLISH-PLAN.md) T9.
+- Service polish for the marketplace: per-service icons and canvas grouping
+  (Data / Sentry / Snuba / Edge) — dashboard-only.

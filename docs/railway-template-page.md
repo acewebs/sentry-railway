@@ -43,43 +43,58 @@ relay, nginx. Full roles: [ARCHITECTURE.md](ARCHITECTURE.md).
   Kafka + the Sentry group the most RAM. This lean build avoids object storage
   (event bodies live in Postgres) to keep it smaller, but it is not "cheap."
 - **No third-party accounts required** for the lean build (unlike the full build,
-  which wants object storage). You will generate two secrets (below).
+  which wants object storage). You provide a few per-deploy variables (below) — all
+  Railway variables, no repo files to edit.
 - **Volumes** are attached to postgres, clickhouse, kafka, and taskbroker.
 
-## Required inputs (secrets — generate per deployment)
+## Required inputs (Railway variables — no file editing)
 
-1. **`system.secret-key`** — Sentry's Django secret. Generate:
-   `sentry config generate-secret-key`. Set it (env `SENTRY_SYSTEM_SECRET_KEY` or in
-   `sentry/config.yml`). The repo ships a placeholder.
-2. **Relay credentials** — generate `relay/credentials.json`
-   (`relay credentials generate`), then copy its `public_key` into
-   `SENTRY_RELAY_WHITELIST_PK` in `sentry/sentry.conf.py` so the internal relay is
-   trusted. Why: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (relay 403 note).
-3. **Admin user** — email + password you'll create during bootstrap.
+All per-deploy secrets are **Railway variables**; you never edit repo files. See
+[`.env.railway.example`](../.env.railway.example) for the full list.
 
-## Deploy + bootstrap (the important part)
+1. **`SENTRY_SYSTEM_SECRET_KEY`** (web) — Django secret. Make it a generated
+   variable: `${{ secret(50) }}`.
+2. **`SENTRY_URL_PREFIX`** (web) — the public https URL, needed for links and (since
+   Django 4) for browser login to pass CSRF. Point it at nginx's domain:
+   `https://${{nginx.RAILWAY_PUBLIC_DOMAIN}}`.
+3. **Relay credentials** — generate one keypair
+   (`docker run --rm ghcr.io/getsentry/relay:nightly credentials generate --stdout`),
+   then set the whole JSON as **`RELAY_CREDENTIALS_JSON`** (relay) and its
+   `public_key` as **`SENTRY_RELAY_WHITELIST_PK`** (web) so web trusts the relay.
+   Why: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (relay 403 note).
+4. **Admin user (optional)** — set `SENTRY_ADMIN_EMAIL` + `SENTRY_ADMIN_PASSWORD`
+   and the bootstrap creates the superuser for you; leave them unset to create the
+   first admin on the web setup screen instead.
 
-Railway spins up the **services**, but Sentry needs a **one-time bootstrap** that
-does not happen automatically. Order:
+## Deploy + bootstrap (automated)
 
-1. **Deploy the data plane first** (postgres, redis, memcached, clickhouse, kafka)
-   and let them go healthy.
-2. **Migrate schemas:**
-   - `sentry upgrade --noinput` (Postgres + creates the internal project)
-   - `snuba migrations migrate --force` (ClickHouse)
-3. **Create Kafka topics** (consumers do NOT auto-create them):
-   - `snuba bootstrap --force --no-migrate`
-   - run [`../railway/create-topics.sh`](../railway/create-topics.sh)
-4. **Create your admin user:** `sentry createuser --superuser`.
-5. **Bring up** snuba-errors, web, sentry-workers, taskbroker, relay, nginx.
-6. **Attach the public domain** to `nginx` (port 80).
+Sentry needs a one-time schema/topic bootstrap that Railway does not do on its own.
+This template runs it **automatically** as **pre-deploy commands** — no shell steps:
 
-Exact commands, the `railway ssh` patterns, and every gotcha:
-[TROUBLESHOOTING.md](TROUBLESHOOTING.md). Deploy order + wiring:
-[RAILWAY.md](RAILWAY.md).
+- The **`web`** service runs [`railway/sentry/bootstrap.sh`](../railway/sentry/bootstrap.sh)
+  before it starts: waits for the data plane, then `sentry upgrade --create-kafka-topics`
+  (Postgres migrations + internal project + Sentry's Kafka topics), ensures the
+  taskbroker / subscription-result topics, and (if you set `SENTRY_ADMIN_EMAIL` +
+  `SENTRY_ADMIN_PASSWORD`) creates the admin superuser.
+- The **`snuba-api`** service runs [`railway/snuba-api/bootstrap.sh`](../railway/snuba-api/bootstrap.sh)
+  before it starts: waits for ClickHouse + Kafka, then `snuba bootstrap --force`
+  (ClickHouse migrations + Snuba's Kafka topics).
 
-> A one-shot bootstrap job that runs steps 2–4 for you is on the roadmap so this
-> becomes truly one-click.
+Both are idempotent (they re-run safely on every deploy) and **gate the rollout** —
+the service only goes live once its bootstrap succeeds, and Railway retries a failed
+pre-deploy. The wait step means a fresh, all-at-once deploy converges without manual
+ordering. Wiring is [`railway/web.json`](../railway/web.json) and
+[`railway/snuba-api.json`](../railway/snuba-api.json) (each service's Railway config
+file points at these). All you do is:
+
+1. Deploy the template (data plane volumes are pre-attached).
+2. **Attach the public domain** to `nginx` (port 80).
+3. Open it and sign in — with the admin you set via env, or create the first admin on
+   the setup screen if you left those unset.
+
+[`railway/create-topics.sh`](../railway/create-topics.sh) remains as a manual
+fallback for debugging topic issues. Exact commands and every gotcha:
+[TROUBLESHOOTING.md](TROUBLESHOOTING.md). Deploy order + wiring: [RAILWAY.md](RAILWAY.md).
 
 ## First login + first event
 

@@ -1,25 +1,22 @@
 # Railway build wrapper for Relay (Sentry's ingestion gateway).
 #
-# Bakes Relay's config + credentials into the image, because Railway has no host
-# bind mounts (upstream Compose bind-mounts ./relay -> /work/.relay at runtime).
+# Bakes only Relay's NON-secret config (config.yml) into the image. The per-deploy
+# Relay keypair is a SECRET and is provided at runtime via the RELAY_CREDENTIALS_JSON
+# Railway variable, not baked in — so a fresh clone builds with no secret files and
+# the template stays safe to publish. See railway/relay/entrypoint.sh.
 #
-# Build context = repo root. On Railway set this file as the service Dockerfile.
-#
-# SECURITY NOTE: relay/credentials.json contains this deployment's Relay keypair.
-# For a published template, DO NOT ship real credentials — generate them per deploy
-# (install/ensure-relay-credentials.sh) and inject via a Railway variable/secret,
-# or run the generation as a one-off deploy step. This wrapper is for a concrete
-# instance; strip credentials.json before publishing the template.
-#
-# STATUS: starter artifact from the locally-verified stack; not yet Railway-deployed.
+# The upstream relay image is distroless (no shell), so we copy a static busybox in
+# to run the entrypoint that assembles the config folder and materialises the
+# credentials from the env var. Build context = repo root.
 
 ARG RELAY_IMAGE=ghcr.io/getsentry/relay:nightly
-FROM ${RELAY_IMAGE}
 
-# ./relay -> /work/.relay (config.yml + credentials.json)
-# NOTE: relay/credentials.json is gitignored (contains a private key). Before
-# building from a fresh clone, generate it:
-#   docker compose run --rm relay credentials generate --stdout > relay/credentials.json
-# then copy its public_key into SENTRY_RELAY_WHITELIST_PK in sentry/sentry.conf.py.
+FROM busybox:musl AS busybox
+
+FROM ${RELAY_IMAGE}
+# Static (musl) shell for the entrypoint; the base image has none.
+COPY --from=busybox /bin/busybox /bin/busybox
+# Non-secret config only (upstream Compose bind-mounts ./relay -> /work/.relay).
 COPY relay/config.yml /work/.relay/config.yml
-COPY relay/credentials.json /work/.relay/credentials.json
+COPY railway/relay/entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/bin/busybox", "sh", "/entrypoint.sh"]

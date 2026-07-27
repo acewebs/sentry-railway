@@ -56,9 +56,22 @@ SENTRY_RELAY_OPEN_REGISTRATION = True
 # Trust the bundled internal Relay by its public key. On Railway the relay's
 # source IP (dual-stack private net) doesn't fall in INTERNAL_SYSTEM_IPS, so the
 # internal-IP path in is_internal_relay() fails; whitelisting the PK makes the
-# relay "internal" regardless of source IP. This PK MUST match
-# railway/relay -> relay/credentials.json ("public_key"). Regenerate both together.
-SENTRY_RELAY_WHITELIST_PK = ["REPLACE_WITH_relay_credentials.json_public_key"]
+# relay "internal" regardless of source IP. Set SENTRY_RELAY_WHITELIST_PK to the
+# relay keypair's "public_key" (same keypair the relay service loads from
+# RELAY_CREDENTIALS_JSON — see railway/relay/entrypoint.sh). Generate once:
+#   docker run --rm ghcr.io/getsentry/relay:nightly credentials generate --stdout
+_relay_pk = env("SENTRY_RELAY_WHITELIST_PK", "").strip()
+SENTRY_RELAY_WHITELIST_PK = [_relay_pk] if _relay_pk else []
+
+# Public URL of this instance (the Railway domain attached to nginx). Sentry uses
+# it to build absolute links and, since Django 4, to trust the login form's Origin
+# for CSRF — without it, browser login fails with "CSRF Validation Failed". On
+# Railway point it at nginx's public domain via a variable reference:
+#   SENTRY_URL_PREFIX=https://${{nginx.RAILWAY_PUBLIC_DOMAIN}}
+_url_prefix = env("SENTRY_URL_PREFIX", "").strip()
+if _url_prefix:
+    SENTRY_OPTIONS["system.url-prefix"] = _url_prefix
+    CSRF_TRUSTED_ORIGINS = list({*globals().get("CSRF_TRUSTED_ORIGINS", []), _url_prefix})
 
 
 DATABASES = {

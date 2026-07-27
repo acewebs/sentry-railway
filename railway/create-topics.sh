@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Create every Kafka topic the errors-only Sentry pipeline needs.
 #
+# NOTE: this is the MANUAL / DEBUG fallback. In the template these topics are
+# created automatically by the web service's pre-deploy bootstrap — the same list
+# lives in railway/sentry/ensure-topics.py (run via railway/sentry/bootstrap.sh).
+# Keep the two topic lists in sync. Use this script only to re-create topics by hand.
+#
 # WHY THIS EXISTS: librdkafka *consumers* default `allow.auto.create.topics=false`,
 # so a consumer subscribing to a missing topic CRASHES ("UnknownTopicOrPartition")
 # instead of creating it — even with the broker's KAFKA_AUTO_CREATE_TOPICS_ENABLE=true.
