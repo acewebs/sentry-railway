@@ -6,6 +6,8 @@
   },
   "deploy": {
     "preDeployCommand": "bash /etc/sentry/bootstrap.sh",
-    "startCommand": "run web"
+    "startCommand": "run web",
+    "healthcheckPath": "/_health/",
+    "healthcheckTimeout": 300
   }
 }
