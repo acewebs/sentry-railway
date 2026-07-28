@@ -7,7 +7,9 @@
 # railway/snuba-api/bootstrap.sh and railway/snuba-api.json.
 #
 # ENTRYPOINT/CMD are inherited from the base image (./docker_entrypoint.sh + `api`),
-# so the normal start command stays `api`. Build context = repo root.
+# so DO NOT set a Railway start command — a custom start command bypasses the
+# entrypoint and fails "executable `api` not found". Leaving it unset runs
+# `./docker_entrypoint.sh api` (same as Compose's `command: api`). Context = repo root.
 
 ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:nightly
 FROM ${SNUBA_IMAGE}
