@@ -14,7 +14,7 @@ for error tracking as a grouped, private-network Railway project.
 
 - **Name:** Self-Hosted Sentry — Error Tracking (Lean)
 - **Description:** Run your own Sentry for error tracking on Railway — private
-  network, ~13 services, Postgres-backed (no object storage required). The lean,
+  network, 12 services, Postgres-backed (no object storage required). The lean,
   budget-friendly build; a full/APM variant is separate. Community template, not
   affiliated with Sentry.
 - **Tags:** sentry, error-tracking, monitoring, observability, self-hosted, apm
@@ -31,7 +31,7 @@ session replay, uptime/cron monitors, feedback, or native symbolication (a
 separate "Full / APM" template covers those). See
 [ARCHITECTURE.md](ARCHITECTURE.md#errors-only-vs-full).
 
-**~13 services**, all private except the public `gateway`: postgres, redis,
+**12 services**, all private except the public `gateway`: postgres, redis,
 memcached, kafka, clickhouse, snuba-api, snuba-errors, sentry-web, sentry-workers
 (honcho-grouped: ingest + post-process + taskworker + scheduler), taskbroker,
 relay, gateway (nginx). Full roles: [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -58,7 +58,7 @@ All per-deploy secrets are **Railway variables**; you never edit repo files. See
    Django 4) for browser login to pass CSRF. Point it at nginx's domain:
    `https://${{gateway.RAILWAY_PUBLIC_DOMAIN}}`.
 3. **Relay credentials** — generate one keypair
-   (`docker run --rm ghcr.io/getsentry/relay:nightly credentials generate --stdout`),
+   (`docker run --rm ghcr.io/getsentry/relay:26.7.0 credentials generate --stdout`),
    then set the whole JSON as **`RELAY_CREDENTIALS_JSON`** (relay) and its
    `public_key` as **`SENTRY_RELAY_WHITELIST_PK`** (sentry-web) so it trusts the relay.
    Why: [TROUBLESHOOTING.md](TROUBLESHOOTING.md) (relay 403 note).

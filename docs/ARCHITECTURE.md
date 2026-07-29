@@ -16,7 +16,7 @@ feedback, native symbolication) to stay cheap and deployable. See
 [ARCHITECTURE.md#errors-only-vs-full](#errors-only-vs-full) for the difference.
 
 It is based on upstream [`getsentry/self-hosted`](https://github.com/getsentry/self-hosted)
-(a ~65-service Docker Compose stack) collapsed to **~14 Railway services**, because
+(a ~65-service Docker Compose stack) collapsed to **12 Railway services**, because
 almost all of those 65 are the *same image* running different commands.
 
 ## The services (and why each exists)

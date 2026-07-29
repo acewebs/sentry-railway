@@ -6,10 +6,10 @@ ClickHouse and Relay *configuration* by bind-mounting repo dirs at runtime
 the config has to be **baked into each image at build time**. That is what the
 wrappers here do.
 
-> **Status:** live-validated on the `sentry` Railway project (bootstrap, ingestion,
-> UI, env-driven secrets). Remaining before publish: connect each service's source
-> (below), then a fresh empty-volume deploy (see [../docs/RAILWAY.md](../docs/RAILWAY.md)
-> and [../dev/docs/PUBLISH-PLAN.md](../dev/docs/PUBLISH-PLAN.md) T9).
+> **Status:** published as a Railway template. Live-validated on the `sentry` project
+> (bootstrap, ingestion, UI, env-driven secrets). Image tags are pinned to Sentry
+> release 26.7.0. A fresh empty-volume deploy ([../dev/docs/PUBLISH-PLAN.md](../dev/docs/PUBLISH-PLAN.md) T9)
+> is the final acceptance check.
 
 ## Service → source map
 
@@ -95,13 +95,10 @@ Migrations, Kafka topics and the optional admin run automatically as pre-deploy
 commands — deployers never open a shell. Details:
 [../docs/RAILWAY.md § Bootstrap](../docs/RAILWAY.md#bootstrap-pre-deploy).
 
-## Still to do before publish
+## Remaining polish
 
-- Connect each service's source in the Railway project (repo + config file for the
-  Dockerfile services; image + `railway/<svc>.json` start command for the stock ones),
-  so the graph is reproducible and "publish as template" captures it.
-- Fresh empty-volume deploy to validate the cold path + that `preDeployCommand`
-  actually runs and gates the rollout, per
+- Fresh empty-volume deploy to validate the cold path end to end and that each
+  `preDeployCommand` runs and gates the rollout, per
   [../dev/docs/PUBLISH-PLAN.md](../dev/docs/PUBLISH-PLAN.md) T9.
-- Service polish for the marketplace: per-service icons and canvas grouping
-  (Data / Sentry / Snuba / Edge) — dashboard-only.
+- Per-service marketplace icons (dashboard-only). Canvas grouping
+  (clickhouse / data-plane / sentry) is already done.

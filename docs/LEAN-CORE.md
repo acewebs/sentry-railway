@@ -1,7 +1,7 @@
 # Lean-core deploy blueprint
 
-The service set for the **lean-core** Railway template: error tracking + basic
-performance, with the `feature-complete` profile services dropped (profiling/Vroom,
+The service set for the **lean-core** Railway template: error tracking only,
+with the `feature-complete` profile services dropped (profiling/Vroom,
 replays, uptime, feedback, spans, EAP, launchpad, generic-metrics beyond basic).
 This is the cheapest footprint that still satisfies the bounty.
 
@@ -16,7 +16,7 @@ consumer processes. To keep the service count (and cost) down, the consumers are
 image) driven by a Procfile — one Railway service runs several consumer commands.
 Stateful stores and the web tier stay as their own services.
 
-Result: ~11 Railway services instead of 40+.
+Result: 12 Railway services instead of 40+.
 
 ## Services
 
@@ -38,8 +38,8 @@ Result: ~11 Railway services instead of 40+.
 | `gateway` | build `railway/nginx/Dockerfile` | **public** | nginx-based; routes ingest→sentry-relay, rest→sentry-web |
 | `sentry-relay` | build `railway/relay/Dockerfile` | private | default |
 | `sentry-web` | build `railway/sentry/Dockerfile` | private | `run web` |
-| `snuba-api` | `ghcr.io/getsentry/snuba:nightly` | private | default (API on :1218) |
-| `sentry-taskbroker` | `ghcr.io/getsentry/taskbroker:nightly` | private | `/opt/taskbroker -c /etc/taskbroker/config.yml` |
+| `snuba-api` | `ghcr.io/getsentry/snuba:26.7.0` | private | default (API on :1218) |
+| `sentry-taskbroker` | `ghcr.io/getsentry/taskbroker:26.7.0` | private | `/opt/taskbroker -c /etc/taskbroker/config.yml` |
 
 ### Grouped process-manager services (Sentry image = `railway/sentry/Dockerfile`)
 
@@ -62,7 +62,7 @@ run consumer --no-strict-offset-reset post-process-forwarder-errors --consumer-g
 run consumer --no-strict-offset-reset post-process-forwarder-transactions --consumer-group post-process-forwarder --synchronize-commit-log-topic=snuba-transactions-commit-log --synchronize-commit-group transactions_group --max-poll-interval-ms 300000 --healthcheck-file-path /tmp/health.txt
 ```
 
-### Grouped Snuba consumers (Snuba image = `ghcr.io/getsentry/snuba:nightly`)
+### Grouped Snuba consumers (Snuba image = `ghcr.io/getsentry/snuba:26.7.0`)
 
 **`snuba-consumers`**, Procfile lines:
 ```

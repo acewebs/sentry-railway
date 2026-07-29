@@ -94,7 +94,7 @@ Compose bind-mounts config from the repo, e.g. `./sentry:/etc/sentry` (holds
 has no host bind mounts.** So the config must travel with the image:
 
 - Build the Sentry service **from this repo** with a Dockerfile that does
-  `COPY sentry/ /etc/sentry/` on top of `ghcr.io/getsentry/sentry:nightly`
+  `COPY sentry/ /etc/sentry/` on top of `ghcr.io/getsentry/sentry:26.7.0`
   (this is essentially what upstream's `sentry/Dockerfile` +
   `sentry-self-hosted-local` already is — reuse it as the Railway build).
 - Same pattern for `clickhouse/` (upstream already builds `clickhouse-self-hosted-local`).
