@@ -8,8 +8,6 @@
 # `web`. Both upstreams are addressed by hostname, so the Railway service names (or
 # aliases) must resolve to `relay` and `web` on the private network — otherwise
 # edit nginx.conf to point at the *.railway.internal names.
-#
-# STATUS: starter artifact from the locally-verified stack; not yet Railway-deployed.
 
 FROM nginx:1.31.3-alpine
 

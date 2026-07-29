@@ -6,7 +6,7 @@
 # dir. (Single-node, low-volume self-host — running the broker as root is
 # acceptable here.)
 #
-# STATUS: Railway-specific fix; being validated on the live deploy.
+# Railway-specific fix.
 
 FROM confluentinc/cp-kafka:7.6.6
 USER root

@@ -11,7 +11,7 @@
 # entrypoint and fails "executable `api` not found". Leaving it unset runs
 # `./docker_entrypoint.sh api` (same as Compose's `command: api`). Context = repo root.
 
-ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:nightly
+ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:26.7.0
 FROM ${SNUBA_IMAGE}
 
 COPY railway/lib/wait-for-tcp.py /wait-for-tcp.py

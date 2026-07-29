@@ -8,9 +8,9 @@
 # Processes (errors-only): ingest-events, post-process-forwarder-errors,
 # taskworker, taskworker-scheduler. See railway/sentry-workers/Procfile.
 #
-# Build context = repo root. STATUS: being validated on the live deploy.
+# Build context = repo root.
 
-ARG SENTRY_IMAGE=ghcr.io/getsentry/sentry:nightly
+ARG SENTRY_IMAGE=ghcr.io/getsentry/sentry:26.7.0
 FROM ${SENTRY_IMAGE}
 
 RUN pip install https://github.com/getsentry/sentry-nodestore-s3/archive/main.zip

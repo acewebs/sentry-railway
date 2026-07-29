@@ -4,9 +4,9 @@
 # /opt/sqlite for its activations DB, and env pointing at kafka.railway.internal.
 # gRPC serves on :50051; taskworker connects via taskbroker.railway.internal:50051.
 #
-# Build context = repo root. STATUS: being validated on the live deploy.
+# Build context = repo root.
 
-ARG TASKBROKER_IMAGE=ghcr.io/getsentry/taskbroker:nightly
+ARG TASKBROKER_IMAGE=ghcr.io/getsentry/taskbroker:26.7.0
 FROM ${TASKBROKER_IMAGE}
 
 COPY taskbroker/ /etc/taskbroker/

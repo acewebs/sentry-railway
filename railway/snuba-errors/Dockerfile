@@ -8,7 +8,7 @@
 # DO NOT set a Railway custom start command here — a custom start command bypasses
 # the image entrypoint. Change the consumer args via CMD below instead.
 
-ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:nightly
+ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:26.7.0
 FROM ${SNUBA_IMAGE}
 
 CMD ["rust-consumer", "--storage", "errors", "--consumer-group", "snuba-consumers", \

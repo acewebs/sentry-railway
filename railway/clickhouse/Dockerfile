@@ -11,8 +11,6 @@
 # comes from the CLICKHOUSE_PASSWORD env var at runtime instead of being baked
 # empty into the image. Set CLICKHOUSE_PASSWORD (auto-generate with ${{ secret(32) }})
 # and give the same value to the Snuba services that connect to ClickHouse.
-#
-# STATUS: starter artifact from the locally-verified stack; not yet Railway-deployed.
 
 ARG BASE_IMAGE=altinity/clickhouse-server:25.3.6.10034.altinitystable
 FROM ${BASE_IMAGE}

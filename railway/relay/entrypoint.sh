@@ -24,7 +24,7 @@ if [ -n "${RELAY_CREDENTIALS_JSON:-}" ]; then
 else
   echo "[relay-entrypoint] ERROR: RELAY_CREDENTIALS_JSON is not set." >&2
   echo "[relay-entrypoint] Generate once and set it as a Railway variable:" >&2
-  echo "[relay-entrypoint]   docker run --rm ghcr.io/getsentry/relay:nightly credentials generate --stdout" >&2
+  echo "[relay-entrypoint]   docker run --rm ghcr.io/getsentry/relay:26.7.0 credentials generate --stdout" >&2
   echo "[relay-entrypoint] Put its \"public_key\" in SENTRY_RELAY_WHITELIST_PK on web." >&2
   exit 1
 fi

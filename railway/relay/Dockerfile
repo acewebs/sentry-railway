@@ -9,7 +9,7 @@
 # to run the entrypoint that assembles the config folder and materialises the
 # credentials from the env var. Build context = repo root.
 
-ARG RELAY_IMAGE=ghcr.io/getsentry/relay:nightly
+ARG RELAY_IMAGE=ghcr.io/getsentry/relay:26.7.0
 
 FROM busybox:musl AS busybox
 

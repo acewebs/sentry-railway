@@ -10,11 +10,8 @@
 # Build context = repo root (so both sentry/ config and enhance-image.sh are in
 # scope). On Railway set this file as the service Dockerfile and the root dir to
 # the repo root.
-#
-# STATUS: starter artifact from the locally-verified stack; not yet deployed on
-# Railway. See ../README.md.
 
-ARG SENTRY_IMAGE=ghcr.io/getsentry/sentry:nightly
+ARG SENTRY_IMAGE=ghcr.io/getsentry/sentry:26.7.0
 FROM ${SENTRY_IMAGE}
 
 # Optional pip enhancements (kept in step with upstream sentry/Dockerfile).
