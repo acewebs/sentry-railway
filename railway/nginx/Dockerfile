@@ -12,3 +12,8 @@
 FROM nginx:1.31.3-alpine
 
 COPY railway/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY railway/nginx/entrypoint.sh /entrypoint.sh
+
+# Listen on Railway's injected $PORT (rendered into nginx.conf at startup). A
+# hardcoded port fails Railway's healthcheck with "service unavailable".
+ENTRYPOINT ["sh", "/entrypoint.sh"]
