@@ -11,4 +11,4 @@
 
 FROM nginx:1.31.3-alpine
 
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY railway/nginx/nginx.conf /etc/nginx/nginx.conf
