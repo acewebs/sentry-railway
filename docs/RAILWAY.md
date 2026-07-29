@@ -24,8 +24,8 @@ Grouped by image:
 Almost all of the 48 Sentry/Snuba services are the **same image with a different
 `command:`**. Every Kafka consumer is a long-running process, but for a **low-volume
 self-hosted install** they do not each need their own Railway service. The template
-therefore **groups** them. That is exactly the "separate services + grouping" the
-bounty asks for, without a 65-service bill.
+therefore **groups** them. That keeps the service count and bill low without
+running 65 separate services.
 
 ## Target Railway architecture (grouped)
 
@@ -176,8 +176,7 @@ Upstream enforces a **16 GB host minimum** for the full `feature-complete` profi
 On Railway, budget memory per service (ClickHouse, Kafka, and each Sentry/Snuba
 group are the heavy ones). Dropping the optional profile services (see above) is the
 main lever to fit a smaller footprint. Document the expected monthly resource cost
-on the template page so deployers aren't surprised — Sentry is genuinely heavy, and
-that heaviness is also why the template's usage-referral upside is meaningful.
+on the template page so deployers aren't surprised, because Sentry is genuinely heavy.
 
 ## Verification status
 

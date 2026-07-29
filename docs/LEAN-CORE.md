@@ -3,7 +3,7 @@
 The service set for the **lean-core** Railway template: error tracking only,
 with the `feature-complete` profile services dropped (profiling/Vroom,
 replays, uptime, feedback, spans, EAP, launchpad, generic-metrics beyond basic).
-This is the cheapest footprint that still satisfies the bounty.
+This is the cheapest footprint for a working errors-only Sentry.
 
 All start commands below are the **exact** upstream commands, pulled from the
 locally-verified compose.
