@@ -56,8 +56,8 @@ This template uses:
 * Sentry self-hosted documentation: https://develop.sentry.dev/self-hosted/
 * Sentry Relay documentation: https://docs.sentry.io/product/relay/
 * Template repository: https://github.com/acewebs/sentry-railway
-* Architecture and event-flow documentation: https://github.com/acewebs/sentry-railway/blob/railway-template/docs/ARCHITECTURE.md
-* Troubleshooting and known deployment considerations: https://github.com/acewebs/sentry-railway/blob/railway-template/docs/TROUBLESHOOTING.md
+* Architecture and event-flow documentation: https://github.com/acewebs/sentry-railway/blob/main/docs/ARCHITECTURE.md
+* Troubleshooting and known deployment considerations: https://github.com/acewebs/sentry-railway/blob/main/docs/TROUBLESHOOTING.md
 
 ### Implementation Details
 
@@ -156,7 +156,7 @@ Sentry is not a lightweight application. It runs an event-streaming pipeline, ba
 
 This is an errors-only Sentry deployment. It does not include performance monitoring and distributed tracing, profiling, session replay, uptime monitoring, cron monitoring, user feedback, native crash symbolication, or other object-storage-backed features. Those capabilities require more Sentry processes and additional infrastructure. A separate Full or APM-oriented template can provide them.
 
-The detailed architecture and feature scope are documented here: https://github.com/acewebs/sentry-railway/blob/railway-template/docs/ARCHITECTURE.md
+The detailed architecture and feature scope are documented here: https://github.com/acewebs/sentry-railway/blob/main/docs/ARCHITECTURE.md
 
 ## Why Deploy Self-Hosted Sentry: Error Tracking (Lean) on Railway?
 
