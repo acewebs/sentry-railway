@@ -26,12 +26,13 @@ RUN if [ -s /usr/src/sentry/enhance-image.sh ]; then /usr/src/sentry/enhance-ima
 COPY sentry/ /etc/sentry/
 ENV SENTRY_CONF=/etc/sentry
 
-# Pre-deploy bootstrap (Railway preDeployCommand on the `web` service): Postgres
-# migrations, Kafka topics and the optional admin user. See railway/web.json.
+# Bootstrap baked into the entrypoint (Railway won't run a config-as-code
+# preDeployCommand for a published template): Postgres migrations, Kafka topics and
+# the optional admin, then start web. See railway/sentry/web-entrypoint.sh.
 COPY railway/lib/wait-for-tcp.py /etc/sentry/wait-for-tcp.py
 COPY railway/sentry/ensure-topics.py /etc/sentry/ensure-topics.py
 COPY railway/sentry/bootstrap.sh /etc/sentry/bootstrap.sh
+COPY railway/sentry/web-entrypoint.sh /etc/sentry/web-entrypoint.sh
 RUN chmod +x /etc/sentry/bootstrap.sh
 
-ENTRYPOINT ["/etc/sentry/entrypoint.sh"]
-CMD ["run", "web"]
+ENTRYPOINT ["sh", "/etc/sentry/web-entrypoint.sh"]

@@ -16,3 +16,9 @@ FROM ${SNUBA_IMAGE}
 
 COPY railway/lib/wait-for-tcp.py /wait-for-tcp.py
 COPY railway/snuba-api/bootstrap.sh /bootstrap.sh
+COPY railway/snuba-api/api-entrypoint.sh /api-entrypoint.sh
+
+# Bootstrap baked into the entrypoint (Railway won't run a config-as-code
+# preDeployCommand for a published template): ClickHouse migrations + Snuba topics,
+# then start the API. See railway/snuba-api/api-entrypoint.sh.
+ENTRYPOINT ["sh", "/api-entrypoint.sh"]
