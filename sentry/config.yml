@@ -13,7 +13,9 @@
 # to confirm a user owns the email address on their account.
 
 # mail.backend: 'smtp'  # Use dummy if you want to disable email entirely
-mail.host: 'smtp'
+# mail.host is managed by sentry.conf.py from SENTRY_SMTP_* env vars (no bundled
+# SMTP service on Railway). Email is disabled cleanly when SENTRY_SMTP_HOST is unset.
+# mail.host: 'smtp'
 # mail.port: 25
 # mail.username: ''
 # mail.password: ''

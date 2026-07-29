@@ -59,7 +59,7 @@ SENTRY_RELAY_OPEN_REGISTRATION = True
 # relay "internal" regardless of source IP. Set SENTRY_RELAY_WHITELIST_PK to the
 # relay keypair's "public_key" (same keypair the relay service loads from
 # RELAY_CREDENTIALS_JSON — see railway/relay/entrypoint.sh). Generate once:
-#   docker run --rm ghcr.io/getsentry/relay:nightly credentials generate --stdout
+#   docker run --rm ghcr.io/getsentry/relay:26.7.0 credentials generate --stdout
 _relay_pk = env("SENTRY_RELAY_WHITELIST_PK", "").strip()
 SENTRY_RELAY_WHITELIST_PK = [_relay_pk] if _relay_pk else []
 
@@ -374,6 +374,22 @@ SENTRY_WEB_OPTIONS = {
 
 SENTRY_OPTIONS["mail.list-namespace"] = env("SENTRY_MAIL_HOST", "localhost")
 SENTRY_OPTIONS["mail.from"] = f"sentry@{SENTRY_OPTIONS['mail.list-namespace']}"
+
+# Mail server: this template ships no SMTP service. Point at an external provider by
+# setting SENTRY_SMTP_HOST (plus optional SENTRY_SMTP_PORT / USERNAME / PASSWORD /
+# USE_TLS). With no SMTP host, email is disabled cleanly via the dummy backend so
+# nothing tries to reach a non-existent host. Issue alert rules still evaluate; they
+# just cannot deliver email until SMTP is configured.
+_smtp_host = env("SENTRY_SMTP_HOST", "")
+if _smtp_host:
+    SENTRY_OPTIONS["mail.backend"] = "smtp"
+    SENTRY_OPTIONS["mail.host"] = _smtp_host
+    SENTRY_OPTIONS["mail.port"] = int(env("SENTRY_SMTP_PORT", "587"))
+    SENTRY_OPTIONS["mail.username"] = env("SENTRY_SMTP_USERNAME", "")
+    SENTRY_OPTIONS["mail.password"] = env("SENTRY_SMTP_PASSWORD", "")
+    SENTRY_OPTIONS["mail.use-tls"] = env("SENTRY_SMTP_USE_TLS", "true").lower() in ("1", "true", "yes")
+else:
+    SENTRY_OPTIONS["mail.backend"] = "dummy"
 
 ############
 # Features #
