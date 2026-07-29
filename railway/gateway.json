@@ -3,5 +3,9 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "railway/nginx/Dockerfile"
+  },
+  "deploy": {
+    "healthcheckPath": "/healthz",
+    "healthcheckTimeout": 300
   }
 }

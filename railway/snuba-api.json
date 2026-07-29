@@ -5,6 +5,8 @@
     "dockerfilePath": "railway/snuba-api/Dockerfile"
   },
   "deploy": {
-    "preDeployCommand": "bash /bootstrap.sh"
+    "preDeployCommand": "bash /bootstrap.sh",
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 300
   }
 }

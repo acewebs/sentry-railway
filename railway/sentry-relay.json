@@ -3,5 +3,9 @@
   "build": {
     "builder": "DOCKERFILE",
     "dockerfilePath": "railway/relay/Dockerfile"
+  },
+  "deploy": {
+    "healthcheckPath": "/api/relay/healthcheck/live/",
+    "healthcheckTimeout": 300
   }
 }
