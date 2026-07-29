@@ -21,7 +21,12 @@ RUN if [ -s /usr/src/sentry/enhance-image.sh ]; then /usr/src/sentry/enhance-ima
 # Bake the runtime config (Railway has no bind mounts) + the Procfile.
 COPY sentry/ /etc/sentry/
 COPY railway/sentry-workers/Procfile /etc/sentry-workers/Procfile
+COPY railway/lib/wait-for-tcp.py /wait-for-tcp.py
+COPY railway/sentry-workers/entrypoint.sh /etc/sentry-workers/entrypoint.sh
 ENV SENTRY_CONF=/etc/sentry
 
+# Wait for sentry-web (Postgres schema + Kafka topics) and snuba-api before starting
+# the consumers — a Kafka consumer subscribing to a not-yet-created topic crashes, so
+# on a cold deploy the workers must not start before sentry-web's bootstrap has run.
 ENTRYPOINT []
-CMD ["honcho", "start", "-f", "/etc/sentry-workers/Procfile"]
+CMD ["sh", "/etc/sentry-workers/entrypoint.sh"]

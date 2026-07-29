@@ -1,16 +1,19 @@
 # Railway build wrapper: Snuba errors consumer (errors-only).
 #
-# Same Snuba image as snuba-api, different command. Keeps the image's
-# ./docker_entrypoint.sh (which takes the command as args) and just overrides CMD.
-# Reads ClickHouse/Kafka/Redis hosts from env (set on the service to
-# *.railway.internal).
+# Same Snuba image as snuba-api, different command. A wrapper entrypoint waits for the
+# data plane AND snuba-api (whose pre-deploy `snuba bootstrap --force` creates the
+# ClickHouse errors tables this consumer writes into) before starting the consumer, so
+# a fresh/cold deploy converges instead of crash-looping on missing tables. The wrapper
+# then hands off to the image's own ./docker_entrypoint.sh so the consumer runs exactly
+# as upstream.
 #
-# DO NOT set a Railway custom start command here — a custom start command bypasses
-# the image entrypoint. Change the consumer args via CMD below instead.
+# DO NOT set a Railway custom start command — it would bypass this entrypoint. Change
+# the consumer args in railway/snuba-errors/entrypoint.sh instead.
 
 ARG SNUBA_IMAGE=ghcr.io/getsentry/snuba:26.7.0
 FROM ${SNUBA_IMAGE}
 
-CMD ["rust-consumer", "--storage", "errors", "--consumer-group", "snuba-consumers", \
-     "--auto-offset-reset=latest", "--max-batch-time-ms", "750", \
-     "--no-strict-offset-reset", "--max-poll-interval-ms", "300000"]
+COPY railway/lib/wait-for-tcp.py /usr/src/snuba/wait-for-tcp.py
+COPY railway/snuba-errors/entrypoint.sh /usr/src/snuba/snuba-errors-entrypoint.sh
+
+ENTRYPOINT ["sh", "/usr/src/snuba/snuba-errors-entrypoint.sh"]
